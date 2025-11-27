@@ -2,11 +2,13 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	apperr "filestorage/internal/common/errors"
 	"filestorage/internal/domain/repository"
 
+	"github.com/aws/smithy-go"
 	"github.com/google/uuid"
 )
 
@@ -51,6 +53,10 @@ func (uc *DownloadSubmissionUseCase) Download(ctx context.Context, submissionID 
 
 	file, err := uc.s3Repo.GetFile(ctx, submission.SubmissionID.String())
 	if err != nil {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) && apiErr.ErrorCode() == "NoSuchKey" {
+			return nil, wrapNotFoundError(err, "submission file not found")
+		}
 		return nil, wrapStorageError(err, "failed to get submission file")
 	}
 

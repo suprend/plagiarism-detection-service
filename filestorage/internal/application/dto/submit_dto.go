@@ -1,6 +1,5 @@
 package dto
 
-// SubmitRequest представляет данные запроса на загрузку файла
 type SubmitRequest struct {
 	AssignmentID string
 	Login        string
@@ -9,7 +8,6 @@ type SubmitRequest struct {
 	ContentType  string
 }
 
-// SubmitResponse представляет ответ на запрос загрузки
 type SubmitResponse struct {
 	SubmissionID string
 }

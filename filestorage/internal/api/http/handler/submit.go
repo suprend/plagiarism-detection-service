@@ -112,7 +112,6 @@ func (h *SubmitHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		contentType = "application/octet-stream"
 	}
 
-	// Вызываем use case
 	req := dto.SubmitRequest{
 		AssignmentID: assignmentID,
 		Login:        login,
@@ -129,7 +128,6 @@ func (h *SubmitHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("submit: assignment_id=%s login=%s submission_id=%s uploaded", assignmentID, login, resp.SubmissionID)
-	// Возвращаем 201 Created без тела
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{

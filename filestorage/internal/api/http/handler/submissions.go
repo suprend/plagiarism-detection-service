@@ -24,14 +24,12 @@ func (h *SubmissionsHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Получение assignment_id из query параметров
 	assignmentID := r.URL.Query().Get("assignment_id")
 	if assignmentID == "" {
 		respondValidationError(w, "assignment_id query parameter is required")
 		return
 	}
 
-	// Получаем список сдач
 	submissions, err := h.getSubmissionsUseCase.GetByAssignmentID(r.Context(), assignmentID)
 	if err != nil {
 		log.Printf("submissions: assignment_id=%s failed: %v", assignmentID, err)
@@ -39,7 +37,6 @@ func (h *SubmissionsHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Формируем ответ
 	submissionsResponse := make([]map[string]interface{}, 0, len(submissions))
 	for _, sub := range submissions {
 		submissionsResponse = append(submissionsResponse, map[string]interface{}{

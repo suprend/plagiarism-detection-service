@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Submission представляет сущность сдачи работы
 type Submission struct {
 	SubmissionID uuid.UUID
 	AssignmentID string

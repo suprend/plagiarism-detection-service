@@ -18,7 +18,6 @@ type postgresRepository struct {
 	queries *Queries
 }
 
-// NewPostgresRepository создает новый экземпляр PostgreSQL репозитория
 func NewPostgresRepository(pool *pgxpool.Pool) repository.SubmissionRepository {
 	return &postgresRepository{
 		pool:    pool,
@@ -26,7 +25,6 @@ func NewPostgresRepository(pool *pgxpool.Pool) repository.SubmissionRepository {
 	}
 }
 
-// toEntity конвертирует postgres.Submission в entity.Submission
 func toEntity(pgSub Submission) *entity.Submission {
 	return &entity.Submission{
 		SubmissionID: pgSub.SubmissionID,
@@ -36,7 +34,6 @@ func toEntity(pgSub Submission) *entity.Submission {
 	}
 }
 
-// toEntitySlice конвертирует слайс postgres.Submission в слайс entity.Submission
 func toEntitySlice(pgSubs []Submission) []*entity.Submission {
 	result := make([]*entity.Submission, 0, len(pgSubs))
 	for _, pgSub := range pgSubs {

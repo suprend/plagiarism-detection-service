@@ -20,7 +20,6 @@ type s3Repository struct {
 	bucket string
 }
 
-// NewS3Repository создает новый экземпляр S3 репозитория
 func NewS3Repository(ctx context.Context, bucket, endpoint, region string) (repository.S3Repository, error) {
 	opts := []func(*config.LoadOptions) error{
 		config.WithRegion(region),
@@ -29,9 +28,7 @@ func NewS3Repository(ctx context.Context, bucket, endpoint, region string) (repo
 	var cfg aws.Config
 	var err error
 
-	// Если указан endpoint (для S3-совместимых хранилищ типа MinIO, Yandex Object Storage)
 	if endpoint != "" {
-		// Используем credentials из переменных окружения для S3-совместимых хранилищ
 		accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
 		secretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
 
@@ -56,7 +53,7 @@ func NewS3Repository(ctx context.Context, bucket, endpoint, region string) (repo
 
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		if endpoint != "" {
-			o.UsePathStyle = true // Для S3-совместимых хранилищ
+			o.UsePathStyle = true
 		}
 	})
 
@@ -66,7 +63,6 @@ func NewS3Repository(ctx context.Context, bucket, endpoint, region string) (repo
 	}, nil
 }
 
-// UploadFile загружает файл в S3
 func (r *s3Repository) UploadFile(ctx context.Context, key string, data []byte, contentType string) error {
 	_, err := r.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(r.bucket),
@@ -81,7 +77,6 @@ func (r *s3Repository) UploadFile(ctx context.Context, key string, data []byte, 
 	return nil
 }
 
-// GetFile получает файл из S3
 func (r *s3Repository) GetFile(ctx context.Context, key string) (io.ReadCloser, error) {
 	result, err := r.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(r.bucket),
@@ -95,7 +90,6 @@ func (r *s3Repository) GetFile(ctx context.Context, key string) (io.ReadCloser, 
 	return result.Body, nil
 }
 
-// DeleteFile удаляет файл из S3
 func (r *s3Repository) DeleteFile(ctx context.Context, key string) error {
 	_, err := r.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(r.bucket),

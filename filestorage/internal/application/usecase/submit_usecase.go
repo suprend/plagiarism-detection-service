@@ -25,7 +25,6 @@ func NewSubmitUseCase(
 }
 
 func (uc *SubmitUseCase) Submit(ctx context.Context, req dto.SubmitRequest) (*dto.SubmitResponse, error) {
-	// Создаем submission в БД в рамках транзакции
 	submission, tx, err := uc.submissionRepo.CreateWithTx(ctx, req.AssignmentID, req.Login)
 	if err != nil {
 		return nil, wrapDatabaseError(err, "failed to create submission")
@@ -36,10 +35,8 @@ func (uc *SubmitUseCase) Submit(ctx context.Context, req dto.SubmitRequest) (*dt
 		}
 	}()
 
-	// Формируем ключ для S3: используем submission_id
 	s3Key := submission.SubmissionID.String()
 
-	// Загружаем файл в S3
 	if err := uc.s3Repo.UploadFile(ctx, s3Key, req.Data, req.ContentType); err != nil {
 		log.Printf("submit: submission_id=%s failed to upload to s3 key=%s: %v", submission.SubmissionID.String(), s3Key, err)
 		return nil, wrapStorageError(err, "failed to upload file to storage")

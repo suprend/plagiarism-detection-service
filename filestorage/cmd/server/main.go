@@ -22,46 +22,38 @@ import (
 func main() {
 	ctx := context.Background()
 
-	// Загрузка конфигураций
 	dbConfig := config.LoadDatabaseConfig()
 	s3Config := config.LoadS3Config()
 
-	// Подключение к БД
 	pool, err := pgxpool.New(ctx, dbConfig.DSN)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer pool.Close()
 
-	// Проверка подключения
 	if err := pool.Ping(ctx); err != nil {
 		log.Fatalf("Failed to ping database: %v", err)
 	}
 
-	// Инициализация репозиториев
 	submissionRepo := postgres.NewPostgresRepository(pool)
 	s3Repo, err := s3.NewS3Repository(ctx, s3Config.Bucket, s3Config.Endpoint, s3Config.Region)
 	if err != nil {
 		log.Fatalf("Failed to initialize S3 repository: %v", err)
 	}
 
-	// Инициализация use cases
 	submitUseCase := usecase.NewSubmitUseCase(submissionRepo, s3Repo)
 	getSubmissionsUseCase := usecase.NewGetSubmissionsUseCase(submissionRepo)
 	downloadSubmissionUseCase := usecase.NewDownloadSubmissionUseCase(submissionRepo, s3Repo)
 
-	// Инициализация роутера
 	r := router.NewRouter(submitUseCase, getSubmissionsUseCase, downloadSubmissionUseCase)
 	handler := r.SetupRoutes()
 
-	// Настройка сервера
 	port := ":8080"
 	srv := &http.Server{
 		Addr:    port,
 		Handler: handler,
 	}
 
-	// Graceful shutdown
 	go func() {
 		fmt.Printf("Server starting on port %s\n", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -69,7 +61,6 @@ func main() {
 		}
 	}()
 
-	// Ожидание сигнала для graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
