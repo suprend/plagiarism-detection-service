@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  filestorage:
+    build: ../filestorage
+    container_name: filestorage
+    ports:
+      - "8081:8080"
+    environment:
+      - PORT=8080
+    # Предполагается, что filestorage сам управляет своими зависимостями или запускается
+    # из собственного compose. Если нужен Postgres/MinIO, поднимайте их там.
+
+  plagiarism:
+    build: .
+    container_name: plagiarism
+    depends_on:
+      - filestorage
+    environment:
+      - PORT=8080
+      - FILESTORAGE_URL=http://filestorage:8080
+      - MATCH_THRESHOLD=0.8
+      - WORKER_COUNT=1
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./reports:/app/plagiarism/reports
+    restart: unless-stopped

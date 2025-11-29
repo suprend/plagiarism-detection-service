@@ -1,0 +1,105 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-filestorage}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-filestorage}
+      POSTGRES_DB: ${POSTGRES_DB:-filestorage}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./filestorage/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U filestorage"]
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  minio-setup:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb myminio/filestorage || true;
+      /usr/bin/mc anonymous set download myminio/filestorage;
+      exit 0;
+      "
+
+  filestorage:
+    build:
+      context: ./filestorage
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://${POSTGRES_USER:-filestorage}:${POSTGRES_PASSWORD:-filestorage}@postgres:5432/${POSTGRES_DB:-filestorage}?sslmode=disable}
+      S3_BUCKET: filestorage
+      S3_ENDPOINT: http://minio:9000
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-setup:
+        condition: service_completed_successfully
+
+  plagiarism:
+    build:
+      context: ./plagiarism
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: 8081
+      FILESTORAGE_URL: http://filestorage:8080
+      MATCH_THRESHOLD: 0.8
+      WORKER_COUNT: 1
+    volumes:
+      - plagiarism_reports:/app/plagiarism/reports
+    depends_on:
+      filestorage:
+        condition: service_started
+
+  userapi:
+    build:
+      context: ./userapi
+    ports:
+      - "8082:8082"
+    environment:
+      PORT: 8082
+      FILESTORAGE_URL: http://filestorage:8080
+      PLAGIARISM_URL: http://plagiarism:8081
+    depends_on:
+      filestorage:
+        condition: service_started
+      plagiarism:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  minio_data:
+  plagiarism_reports:

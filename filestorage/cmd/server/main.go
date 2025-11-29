@@ -48,7 +48,7 @@ func main() {
 	r := router.NewRouter(submitUseCase, getSubmissionsUseCase, downloadSubmissionUseCase)
 	handler := r.SetupRoutes()
 
-	port := ":8080"
+	port := ":" + config.ServerPort()
 	srv := &http.Server{
 		Addr:    port,
 		Handler: handler,

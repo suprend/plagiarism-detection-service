@@ -10,9 +10,8 @@ import (
 
 	"filestorage/internal/application/dto"
 	"filestorage/internal/application/usecase"
+	"filestorage/internal/infrastructure/config"
 )
-
-const maxUploadSize = 1 * 1024 * 1024 // 1MB
 
 var errFileTooLarge = errors.New("file too large")
 
@@ -37,6 +36,8 @@ func (h *SubmitHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		respondValidationError(w, "invalid multipart form")
 		return
 	}
+
+	maxUploadSize := config.MaxUploadSize()
 
 	var (
 		assignmentID string
@@ -75,7 +76,7 @@ func (h *SubmitHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			}
 			login = string(body)
 		case "file":
-			data, readErr := readFilePart(part)
+			data, readErr := readFilePart(part, maxUploadSize)
 			if readErr != nil {
 				if errors.Is(readErr, errFileTooLarge) {
 					respondValidationError(w, fmt.Sprintf("file exceeds max size %d bytes", maxUploadSize))
@@ -135,7 +136,7 @@ func (h *SubmitHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func readFilePart(part io.ReadCloser) ([]byte, error) {
+func readFilePart(part io.ReadCloser, maxUploadSize int64) ([]byte, error) {
 	defer part.Close()
 
 	limited := io.LimitReader(part, maxUploadSize+1)
@@ -144,7 +145,7 @@ func readFilePart(part io.ReadCloser) ([]byte, error) {
 		return nil, err
 	}
 
-	if len(data) > maxUploadSize {
+	if int64(len(data)) > maxUploadSize {
 		return nil, errFileTooLarge
 	}
 

@@ -1,0 +1,149 @@
+openapi: 3.0.3
+info:
+  title: User API Gateway
+  version: "1.0.0"
+  description: |
+    Публичный шлюз для загрузки работ и получения отчётов по плагиату.
+servers:
+  - url: http://localhost:8082
+paths:
+  /works/{work_id}/submit:
+    post:
+      summary: Загрузить работу и запустить проверку плагиата
+      parameters:
+        - name: work_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                login:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+              required:
+                - login
+                - file
+      responses:
+        "202":
+          description: Задача на проверку поставлена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submission_id:
+                    type: string
+                  check_status:
+                    type: string
+        "4XX":
+          description: Ошибка валидации запроса
+        "5XX":
+          description: Внутренняя ошибка
+  /works/{work_id}/reports:
+    get:
+      summary: Получить отчёты по всем сдачам работы
+      parameters:
+        - name: work_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Отчёты найдены
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  work_id:
+                    type: string
+                  reports:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CheckReport"
+        "404":
+          description: Отчётов нет
+        "5XX":
+          description: Внутренняя ошибка
+  /works/{work_id}/wordcloud:
+    get:
+      summary: Построить облако слов для конкретной сдачи
+      parameters:
+        - name: work_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: submission_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: PNG с облаком слов
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "4XX":
+          description: Ошибка валидации
+        "5XX":
+          description: Внутренняя ошибка
+components:
+  schemas:
+    MatchResult:
+      type: object
+      properties:
+        other_submission_id:
+          type: string
+        other_author_id:
+          type: string
+        equal:
+          type: boolean
+        matched_bytes:
+          type: integer
+          format: int64
+        total_bytes:
+          type: integer
+          format: int64
+        similarity:
+          type: number
+          format: float
+        self_size:
+          type: integer
+          format: int64
+        other_size:
+          type: integer
+          format: int64
+    CheckReport:
+      type: object
+      properties:
+        work_id:
+          type: string
+        submission_id:
+          type: string
+        author_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, done, failed]
+        created_at:
+          type: string
+          format: date-time
+        error:
+          type: string
+        matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchResult"
