@@ -26,6 +26,7 @@ func NewRouter(submitUC *usecase.SubmitUseCase, reportsUC *usecase.ReportsUseCas
 func (r *Router) SetupRoutes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/works/", r.handleWorks)
+	mux.HandleFunc("/wordcloud", r.wordcloudHandler.Handle)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
@@ -43,8 +44,6 @@ func (r *Router) handleWorks(w http.ResponseWriter, req *http.Request) {
 		r.submitHandler.Handle(w, req)
 	case strings.HasSuffix(path, "/reports"):
 		r.reportsHandler.Handle(w, req)
-	case strings.HasSuffix(path, "/wordcloud"):
-		r.wordcloudHandler.Handle(w, req)
 	default:
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)

@@ -1,39 +1,31 @@
 openapi: 3.0.3
 info:
-  title: User API Gateway
+  title: Plagiarism Service
   version: "1.0.0"
-  description: |
-    Публичный шлюз для загрузки работ и получения отчётов по плагиату.
+  description: API проверки сдач на плагиат (постановка задач и выдача отчётов).
 servers:
-  - url: http://localhost:8082
+  - url: http://localhost:8081
 paths:
-  /works/{work_id}/submit:
+  /checks:
     post:
-      summary: Загрузить работу и запустить проверку плагиата
-      parameters:
-        - name: work_id
-          in: path
-          required: true
-          schema:
-            type: string
+      summary: Поставить задачу на проверку
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
-                login:
+                submission_id:
                   type: string
-                file:
+                work_id:
                   type: string
-                  format: binary
               required:
-                - login
-                - file
+                - submission_id
+                - work_id
       responses:
         "202":
-          description: Задача на проверку поставлена
+          description: Задача принята
           content:
             application/json:
               schema:
@@ -41,11 +33,12 @@ paths:
                 properties:
                   submission_id:
                     type: string
-                  check_status:
+                  status:
                     type: string
-        "4XX":
-          description: Ошибка валидации запроса
-        "5XX":
+                    enum: [pending, done, failed]
+        "400":
+          description: Ошибка валидации
+        "500":
           description: Внутренняя ошибка
   /works/{work_id}/reports:
     get:
@@ -71,29 +64,8 @@ paths:
                     items:
                       $ref: "#/components/schemas/CheckReport"
         "404":
-          description: Отчётов нет
-        "5XX":
-          description: Внутренняя ошибка
-  /wordcloud:
-    get:
-      summary: Построить облако слов для конкретной сдачи
-      parameters:
-        - name: submission_id
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: PNG с облаком слов
-          content:
-            image/png:
-              schema:
-                type: string
-                format: binary
-        "4XX":
-          description: Ошибка валидации
-        "5XX":
+          description: Отчёты не найдены
+        "500":
           description: Внутренняя ошибка
 components:
   schemas:

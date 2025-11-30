@@ -26,6 +26,8 @@ Compose поднимет Postgres, MinIO, job инициализации бак�
 | `GET /submissions?assignment_id=...` | Возвращает список сдач для задания. |
 | `GET /submissions/download?submission_id=...` | Стримит файл по `submission_id`. Имя и тип в ответе — `submission_id` + `application/octet-stream`. |
 
+Спека OpenAPI: `filestorage/openapi.yaml`.
+
 Пример ручного теста (из корня репозитория с `tmp-files/sample1.txt`):
 
 ```bash

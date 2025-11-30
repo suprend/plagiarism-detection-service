@@ -22,7 +22,7 @@ COPY --from=builder /app/bin/plagiarism /app/server
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-ENV PORT=8080 \
+ENV PORT=8081 \
     FILESTORAGE_URL=http://filestorage:8080 \
     MATCH_THRESHOLD=0.8 \
     WORKER_COUNT=1

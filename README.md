@@ -21,7 +21,7 @@ flowchart LR
     PL -- list/download submissions --> FS
     UserAPI -- JSON отчётов (с author_id) --> Client
 
-    Client -- GET /works/{id}/wordcloud --> UserAPI
+    Client -- GET /wordcloud?submission_id=... --> UserAPI
     UserAPI -- download submission --> FS
     UserAPI -- build cloud --> WC
     UserAPI -- PNG + save WORDCLOUD_DIR --> Client
@@ -32,12 +32,22 @@ flowchart LR
 - `plagiarism` — очередь проверок, воркер сравнивает сдачи, сохраняет отчёты (с author_id и other_author_id).
 - `userapi` — REST-шлюз: submit, reports, wordcloud. Swagger UI на `/swagger`.
 
+## Алгоритм проверки плагиата
+
+1. `userapi` после загрузки ставит задачу в `plagiarism` (`/checks`), статус сразу `pending`.
+2. Воркер `plagiarism` получает все сдачи нужной работы из `filestorage` (`/submissions?assignment_id=...`), скачивает текущую и каждую чужую.
+3. Сравнение — побайтово: считаем долю совпавших байт относительно большей длины двух файлов `similarity = matchedBytes / max(len(A), len(B))`.
+4. Если `similarity >= MATCH_THRESHOLD` (по умолчанию 0.8), фиксируем совпадение с указанием `other_submission_id` и `other_author_id`.
+5. По итогам пишется отчёт: `status=done` с найденными совпадениями или `failed` при ошибке скачивания/очереди; отчёты лежат в `plagiarism/reports/{work_id}/{submission_id}.json`, агрегат `overall.json`.
+
 ## Структура репозитория
 
 - `filestorage/` — сервис хранения (cmd, api/http, usecase, infra, migrations).
 - `plagiarism/` — сервис анализа (cmd, api/http, usecase, infra, воркер).
 - `userapi/` — gateway (cmd, api/http, usecase, infra).
 - `userapi/openapi.yaml` — OpenAPI спека публичного API.
+- `filestorage/openapi.yaml` — OpenAPI спека сервиса хранения.
+- `plagiarism/openapi.yaml` — OpenAPI спека сервиса проверки.
 - `docker-compose.yml` — общий запуск всех сервисов + Postgres + MinIO.
 - `docs/` — вспомогательные материалы.
 
@@ -67,7 +77,7 @@ curl http://localhost:8082/works/test-work/reports | jq .
 
 # облако слов (подставь submission_id из submit)
 SID=<submission_id>
-curl -o wordcloud.png "http://localhost:8082/works/test-work/wordcloud?submission_id=$SID"
+  curl -o wordcloud.png "http://localhost:8082/wordcloud?submission_id=$SID"
 ```
 
 Swagger UI: `http://localhost:8082/swagger`, спека: `/openapi.yaml`.

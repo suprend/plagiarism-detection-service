@@ -1,0 +1,108 @@
+openapi: 3.0.3
+info:
+  title: Filestorage Service
+  version: "1.0.0"
+  description: API для загрузки, листинга и скачивания студенческих работ.
+servers:
+  - url: http://localhost:8080
+paths:
+  /submit:
+    post:
+      summary: Загрузить работу
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                assignment_id:
+                  type: string
+                  description: Идентификатор задания/контрольной
+                login:
+                  type: string
+                  description: Автор сдачи
+                file:
+                  type: string
+                  format: binary
+                  description: Файл работы
+              required:
+                - assignment_id
+                - login
+                - file
+      responses:
+        "201":
+          description: Успешная загрузка
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submission_id:
+                    type: string
+        "400":
+          description: Ошибка валидации/формата запроса
+        "500":
+          description: Внутренняя ошибка
+  /submissions:
+    get:
+      summary: Получить список сдач по заданию
+      parameters:
+        - name: assignment_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Список сдач
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submissions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Submission"
+        "400":
+          description: Ошибка валидации
+        "500":
+          description: Внутренняя ошибка
+  /submissions/download:
+    get:
+      summary: Скачать файл сдачи
+      parameters:
+        - name: submission_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Файл сдачи
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Ошибка валидации
+        "404":
+          description: Файл не найден
+        "500":
+          description: Внутренняя ошибка
+components:
+  schemas:
+    Submission:
+      type: object
+      properties:
+        submission_id:
+          type: string
+        assignment_id:
+          type: string
+        author_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
