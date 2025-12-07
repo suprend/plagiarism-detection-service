@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 
 	"userapi/internal/application/dto"
 	apperr "userapi/internal/common/errors"
@@ -13,12 +12,7 @@ type FilestorageUploader interface {
 }
 
 type PlagiarismStarter interface {
-	StartCheck(ctx context.Context, submissionID, workID string) (CheckStartResult, error)
-}
-
-type CheckStartResult struct {
-	SubmissionID string
-	Status       string
+	StartCheck(ctx context.Context, submissionID, workID string) (dto.CheckStartResult, error)
 }
 
 type SubmitUseCase struct {

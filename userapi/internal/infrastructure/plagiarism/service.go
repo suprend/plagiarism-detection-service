@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"userapi/internal/application/dto"
-	"userapi/internal/application/usecase"
 )
 
 type Service struct {
@@ -15,12 +14,12 @@ func NewService(client *Client) *Service {
 	return &Service{client: client}
 }
 
-func (s *Service) StartCheck(ctx context.Context, submissionID, workID string) (usecase.CheckStartResult, error) {
+func (s *Service) StartCheck(ctx context.Context, submissionID, workID string) (dto.CheckStartResult, error) {
 	resp, err := s.client.StartCheck(ctx, submissionID, workID)
 	if err != nil {
-		return usecase.CheckStartResult{}, err
+		return dto.CheckStartResult{}, err
 	}
-	return usecase.CheckStartResult{
+	return dto.CheckStartResult{
 		SubmissionID: resp.SubmissionID,
 		Status:       resp.Status,
 	}, nil
