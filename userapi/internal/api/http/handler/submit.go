@@ -25,19 +25,19 @@ func NewSubmitHandler(uc *usecase.SubmitUseCase) *SubmitHandler {
 
 func (h *SubmitHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "only POST is allowed")
+		respondMethodNotAllowed(w, "only POST is allowed")
 		return
 	}
 
 	workID, ok := extractWorkID(r.URL.Path, "/submit")
 	if !ok {
-		writeError(w, http.StatusBadRequest, "invalid_path", "expected /works/{work_id}/submit")
+		respondValidationError(w, "expected /works/{work_id}/submit")
 		return
 	}
 
 	mr, err := r.MultipartReader()
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_form", "expected multipart form data")
+		respondValidationError(w, "expected multipart form data")
 		return
 	}
 
@@ -56,7 +56,7 @@ func (h *SubmitHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			if err == io.EOF {
 				break
 			}
-			writeError(w, http.StatusBadRequest, "invalid_form", "failed to read multipart body")
+			respondValidationError(w, "failed to read multipart body")
 			return
 		}
 
@@ -65,7 +65,7 @@ func (h *SubmitHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			body, readErr := io.ReadAll(part)
 			_ = part.Close()
 			if readErr != nil {
-				writeError(w, http.StatusBadRequest, "invalid_form", "failed to read login")
+				respondValidationError(w, "failed to read login")
 				return
 			}
 			login = string(body)
@@ -73,10 +73,10 @@ func (h *SubmitHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			data, ct, readErr := readFilePart(part, maxUploadSize)
 			if readErr != nil {
 				if errors.Is(readErr, errFileTooLarge) {
-					writeError(w, http.StatusBadRequest, "validation_error", fmt.Sprintf("file exceeds max size %d bytes", maxUploadSize))
+					respondValidationError(w, fmt.Sprintf("file exceeds max size %d bytes", maxUploadSize))
 					return
 				}
-				writeError(w, http.StatusBadRequest, "invalid_form", "failed to read file")
+				respondValidationError(w, "failed to read file")
 				return
 			}
 			fileData = data
@@ -88,12 +88,12 @@ func (h *SubmitHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if login == "" {
-		writeError(w, http.StatusBadRequest, "validation_error", "login is required")
+		respondValidationError(w, "login is required")
 		return
 	}
 
 	if len(fileData) == 0 {
-		writeError(w, http.StatusBadRequest, "validation_error", "file is required")
+		respondValidationError(w, "file is required")
 		return
 	}
 
@@ -111,7 +111,7 @@ func (h *SubmitHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := h.useCase.Submit(r.Context(), req)
 	if err != nil {
-		writeError(w, http.StatusBadGateway, "submit_failed", err.Error())
+		respondError(w, err)
 		return
 	}
 

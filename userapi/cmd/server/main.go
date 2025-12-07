@@ -23,8 +23,8 @@ func main() {
 
 	submitUseCase := usecase.NewSubmitUseCase(fsClient, plagClient)
 	reportsUseCase := usecase.NewReportsUseCase(plagClient)
-	wcClient := wordcloud.NewClient(config.WordcloudURL())
-	wordcloudUseCase := usecase.NewWordcloudUseCase(fsClient, wcClient, config.WordcloudDir())
+	wcClient := wordcloud.NewClient(config.WordcloudServiceURL())
+	wordcloudUseCase := usecase.NewWordcloudUseCase(wcClient)
 
 	r := router.NewRouter(submitUseCase, reportsUseCase, wordcloudUseCase)
 	handler := r.SetupRoutes()

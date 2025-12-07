@@ -20,6 +20,8 @@ type Client struct {
 	httpClient *http.Client
 }
 
+const checksPath = "/checks"
+
 func NewClient(baseURL string) *Client {
 	return &Client{
 		baseURL:    strings.TrimRight(baseURL, "/"),
@@ -68,7 +70,13 @@ func (c *Client) StartCheck(ctx context.Context, submissionID, workID string) (*
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/checks", bytes.NewReader(body))
+	u, err := url.Parse(c.baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid plagiarism url: %w", err)
+	}
+	u.Path = checksPath
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
@@ -96,9 +104,13 @@ func (c *Client) StartCheck(ctx context.Context, submissionID, workID string) (*
 }
 
 func (c *Client) GetReports(ctx context.Context, workID string) (*WorkReportsResponse, error) {
-	u := fmt.Sprintf("%s/works/%s/reports", c.baseURL, url.PathEscape(workID))
+	u, err := url.Parse(c.baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid plagiarism url: %w", err)
+	}
+	u.Path = fmt.Sprintf("/works/%s/reports", url.PathEscape(workID))
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}

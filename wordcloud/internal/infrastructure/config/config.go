@@ -6,7 +6,7 @@ func ServerPort() string {
 	if v := os.Getenv("PORT"); v != "" {
 		return v
 	}
-	return "8082"
+	return "8083"
 }
 
 func FilestorageURL() string {
@@ -16,16 +16,16 @@ func FilestorageURL() string {
 	return "http://localhost:8080"
 }
 
-func PlagiarismURL() string {
-	if v := os.Getenv("PLAGIARISM_URL"); v != "" {
+func WordcloudGeneratorURL() string {
+	if v := os.Getenv("WORDCLOUD_GENERATOR_URL"); v != "" {
 		return v
 	}
-	return "http://localhost:8081"
+	return "https://quickchart.io/wordcloud"
 }
 
-func WordcloudServiceURL() string {
-	if v := os.Getenv("WORDCLOUD_SERVICE_URL"); v != "" {
+func WordcloudDir() string {
+	if v := os.Getenv("WORDCLOUD_DIR"); v != "" {
 		return v
 	}
-	return "http://localhost:8083"
+	return "tmp-files/wordclouds"
 }

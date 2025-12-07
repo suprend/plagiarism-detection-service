@@ -84,6 +84,20 @@ services:
       filestorage:
         condition: service_started
 
+  wordcloud:
+    build:
+      context: ./wordcloud
+    ports:
+      - "8083:8083"
+    environment:
+      PORT: 8083
+      FILESTORAGE_URL: http://filestorage:8080
+      WORDCLOUD_GENERATOR_URL: https://quickchart.io/wordcloud
+      WORDCLOUD_DIR: tmp-files/wordclouds
+    depends_on:
+      filestorage:
+        condition: service_started
+
   userapi:
     build:
       context: ./userapi
@@ -93,10 +107,13 @@ services:
       PORT: 8082
       FILESTORAGE_URL: http://filestorage:8080
       PLAGIARISM_URL: http://plagiarism:8081
+      WORDCLOUD_SERVICE_URL: http://wordcloud:8083
     depends_on:
       filestorage:
         condition: service_started
       plagiarism:
+        condition: service_started
+      wordcloud:
         condition: service_started
 
 volumes:

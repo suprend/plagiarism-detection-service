@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"userapi/internal/application/dto"
+	apperr "userapi/internal/common/errors"
 )
 
 type FilestorageUploader interface {
@@ -35,12 +36,12 @@ func NewSubmitUseCase(fs FilestorageUploader, plag PlagiarismStarter) *SubmitUse
 func (uc *SubmitUseCase) Submit(ctx context.Context, req dto.SubmitWorkRequest) (*dto.SubmitWorkResponse, error) {
 	submissionID, err := uc.fs.UploadSubmission(ctx, req.WorkID, req.Login, req.Data, req.Filename, req.ContentType)
 	if err != nil {
-		return nil, fmt.Errorf("upload submission: %w", err)
+		return nil, apperr.Wrap(err, apperr.CodeDownstream, "upload submission failed")
 	}
 
 	check, err := uc.plag.StartCheck(ctx, submissionID, req.WorkID)
 	if err != nil {
-		return nil, fmt.Errorf("start plagiarism check: %w", err)
+		return nil, apperr.Wrap(err, apperr.CodeDownstream, "start plagiarism check failed")
 	}
 
 	return &dto.SubmitWorkResponse{

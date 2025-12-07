@@ -1,4 +1,4 @@
-package wordcloud
+package filestorage
 
 import (
 	"context"
@@ -15,8 +15,7 @@ type Client struct {
 	httpClient *http.Client
 }
 
-const wordcloudPath = "/wordcloud"
-const maxErrBody = 4096
+const downloadPath = "/submissions/download"
 
 func NewClient(baseURL string) *Client {
 	return &Client{
@@ -25,12 +24,12 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
-func (c *Client) Get(ctx context.Context, submissionID string) ([]byte, error) {
+func (c *Client) DownloadSubmission(ctx context.Context, submissionID string) ([]byte, error) {
 	u, err := url.Parse(c.baseURL)
 	if err != nil {
-		return nil, fmt.Errorf("invalid base url: %w", err)
+		return nil, fmt.Errorf("invalid filestorage url: %w", err)
 	}
-	u.Path = wordcloudPath
+	u.Path = downloadPath
 	q := u.Query()
 	q.Set("submission_id", submissionID)
 	u.RawQuery = q.Encode()
@@ -47,8 +46,8 @@ func (c *Client) Get(ctx context.Context, submissionID string) ([]byte, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		msg, _ := io.ReadAll(io.LimitReader(resp.Body, maxErrBody))
-		return nil, fmt.Errorf("wordcloud: status %d: %s", resp.StatusCode, strings.TrimSpace(string(msg)))
+		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		return nil, fmt.Errorf("download submission: status %d: %s", resp.StatusCode, strings.TrimSpace(string(msg)))
 	}
 
 	data, err := io.ReadAll(resp.Body)

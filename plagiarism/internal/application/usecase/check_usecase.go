@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"plagiarism/internal/application/dto"
+	apperr "plagiarism/internal/common/errors"
 	"plagiarism/internal/domain"
 	"plagiarism/internal/infrastructure/report"
 )
@@ -25,8 +26,8 @@ type CheckService struct {
 	worker worker
 }
 
-var ErrCheckNotFound = errors.New("check not found")
-var ErrWorkerUnavailable = errors.New("worker not configured")
+var ErrCheckNotFound = apperr.New(apperr.CodeNotFound, "report not found")
+var ErrWorkerUnavailable = apperr.New(apperr.CodeInternal, "worker not configured")
 
 func NewCheckService(store reportStore, worker worker) *CheckService {
 	return &CheckService{store: store, worker: worker}
@@ -48,14 +49,14 @@ func (s *CheckService) StartCheck(ctx context.Context, submissionID, workID stri
 	}
 
 	if err := s.store.Save(report); err != nil {
-		return nil, err
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "save report failed")
 	}
 
 	if err := s.worker.Enqueue(ctx, report); err != nil {
 		report.Status = domain.CheckStatusFailed
 		report.Error = err.Error()
 		_ = s.store.Save(report)
-		return nil, err
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "enqueue failed")
 	}
 
 	return &dto.StartCheckResponse{
@@ -70,7 +71,7 @@ func (s *CheckService) GetCheck(ctx context.Context, workID, submissionID string
 		if errors.Is(err, report.ErrReportNotFound) {
 			return nil, ErrCheckNotFound
 		}
-		return nil, err
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "load report failed")
 	}
 
 	return &dto.CheckStatusResponse{CheckReport: rep}, nil
@@ -82,7 +83,7 @@ func (s *CheckService) GetReportsByWork(ctx context.Context, workID string) (*dt
 		if errors.Is(err, report.ErrReportNotFound) {
 			return nil, ErrCheckNotFound
 		}
-		return nil, err
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "get reports failed")
 	}
 
 	return &dto.WorkReportsResponse{

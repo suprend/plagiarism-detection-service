@@ -3,14 +3,14 @@ package handler
 import (
 	"net/http"
 
-	"userapi/internal/application/usecase"
+	"wordcloud/internal/application/usecase"
 )
 
 type WordcloudHandler struct {
-	useCase *usecase.WordcloudUseCase
+	useCase *usecase.WordcloudService
 }
 
-func NewWordcloudHandler(uc *usecase.WordcloudUseCase) *WordcloudHandler {
+func NewWordcloudHandler(uc *usecase.WordcloudService) *WordcloudHandler {
 	return &WordcloudHandler{useCase: uc}
 }
 

@@ -8,6 +8,7 @@
 cd userapi
 export FILESTORAGE_URL=http://localhost:8080    # адрес filestorage
 export PLAGIARISM_URL=http://localhost:8081    # адрес plagiarism
+export WORDCLOUD_SERVICE_URL=http://localhost:8083 # адрес wordcloud
 export PORT=8082                               # userapi listen port
 
 go run ./cmd/server
@@ -23,6 +24,7 @@ docker build -t userapi .
 docker run --rm -p 8082:8082 \
   -e FILESTORAGE_URL=http://filestorage:8080 \
   -e PLAGIARISM_URL=http://plagiarism:8081 \
+  -e WORDCLOUD_SERVICE_URL=http://wordcloud:8083 \
   userapi
 ```
 
@@ -32,7 +34,7 @@ Swagger UI доступен на `http://localhost:8082/swagger`, сама сп�
 
 - `POST /works/{work_id}/submit` — multipart с полями `login` (string) и `file` (<=1MB). Загружает решение в filestorage и сразу ставит задачу на проверку плагиата. Ответ: `{"submission_id":"...","check_status":"pending"}` с HTTP 202.
 - `GET /works/{work_id}/reports` — проксирует последние отчёты по работе из сервиса plagiarism. Формат совпадает с его API (`{"work_id":"...","reports":[...]}`).
-- `GET /wordcloud?submission_id=...` — строит облако слов для конкретной сдачи (png), использует сервис quickchart.io.
+- `GET /wordcloud?submission_id=...` — проксирует облако слов, которое строит выделенный wordcloud-сервис (png).
 
 ### Конфигурация
 
@@ -40,5 +42,4 @@ Swagger UI доступен на `http://localhost:8082/swagger`, сама сп�
 - `FILESTORAGE_URL` — базовый адрес filestorage (по умолчанию `http://localhost:8080`).
 - `PLAGIARISM_URL` — базовый адрес plagiarism (по умолчанию `http://localhost:8081`).
 - `MAX_UPLOAD_SIZE_BYTES` — лимит размера загружаемого файла (по умолчанию `1048576`, то есть 1MB).
-- `WORDCLOUD_URL` — endpoint сервиса построения облака слов (по умолчанию `https://quickchart.io/wordcloud`).
-- `WORDCLOUD_DIR` — путь для сохранения сгенерированных PNG облаков слов (по умолчанию `tmp-files/wordclouds` внутри контейнера/проекта).
+- `WORDCLOUD_SERVICE_URL` — endpoint выделенного сервиса построения облака слов (по умолчанию `http://localhost:8083`).

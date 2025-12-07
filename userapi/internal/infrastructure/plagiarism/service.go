@@ -2,7 +2,6 @@ package plagiarism
 
 import (
 	"context"
-	"errors"
 
 	"userapi/internal/application/dto"
 	"userapi/internal/application/usecase"
@@ -30,9 +29,6 @@ func (s *Service) StartCheck(ctx context.Context, submissionID, workID string) (
 func (s *Service) GetReports(ctx context.Context, workID string) (*dto.WorkReportsResponse, error) {
 	resp, err := s.client.GetReports(ctx, workID)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return nil, usecase.ErrReportNotFound
-		}
 		return nil, err
 	}
 

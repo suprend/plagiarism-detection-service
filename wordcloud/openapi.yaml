@@ -1,0 +1,31 @@
+openapi: 3.0.3
+info:
+  title: Wordcloud Service
+  version: "1.0.0"
+  description: Построение облаков слов по содержимому сдач.
+servers:
+  - url: http://localhost:8083
+paths:
+  /wordcloud:
+    get:
+      summary: Построить облако слов
+      parameters:
+        - name: submission_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: PNG с облаком слов
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Ошибка валидации
+        "502":
+          description: Ошибка построения облака
+        "500":
+          description: Внутренняя ошибка

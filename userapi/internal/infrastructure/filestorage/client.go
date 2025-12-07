@@ -18,6 +18,9 @@ type Client struct {
 	httpClient *http.Client
 }
 
+const submitPath = "/submit"
+const downloadPath = "/submissions/download"
+
 func NewClient(baseURL string) *Client {
 	return &Client{
 		baseURL:    strings.TrimRight(baseURL, "/"),
@@ -47,7 +50,13 @@ func (c *Client) UploadSubmission(ctx context.Context, assignmentID, login strin
 		return "", err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/submit", &body)
+	u, err := url.Parse(c.baseURL)
+	if err != nil {
+		return "", fmt.Errorf("invalid filestorage url: %w", err)
+	}
+	u.Path = submitPath
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), &body)
 	if err != nil {
 		return "", err
 	}
@@ -80,9 +89,16 @@ func (c *Client) UploadSubmission(ctx context.Context, assignmentID, login strin
 }
 
 func (c *Client) DownloadSubmission(ctx context.Context, submissionID string) ([]byte, error) {
-	u := fmt.Sprintf("%s/submissions/download?submission_id=%s", c.baseURL, url.QueryEscape(submissionID))
+	u, err := url.Parse(c.baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid filestorage url: %w", err)
+	}
+	u.Path = downloadPath
+	q := u.Query()
+	q.Set("submission_id", submissionID)
+	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}

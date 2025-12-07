@@ -5,9 +5,9 @@ import (
 	"errors"
 
 	"userapi/internal/application/dto"
+	apperr "userapi/internal/common/errors"
+	plagclient "userapi/internal/infrastructure/plagiarism"
 )
-
-var ErrReportNotFound = errors.New("report not found")
 
 type ReportsProvider interface {
 	GetReports(ctx context.Context, workID string) (*dto.WorkReportsResponse, error)
@@ -22,5 +22,12 @@ func NewReportsUseCase(provider ReportsProvider) *ReportsUseCase {
 }
 
 func (uc *ReportsUseCase) GetByWork(ctx context.Context, workID string) (*dto.WorkReportsResponse, error) {
-	return uc.provider.GetReports(ctx, workID)
+	resp, err := uc.provider.GetReports(ctx, workID)
+	if err != nil {
+		if errors.Is(err, plagclient.ErrNotFound) {
+			return nil, apperr.New(apperr.CodeNotFound, "report not found")
+		}
+		return nil, apperr.Wrap(err, apperr.CodeDownstream, "get reports failed")
+	}
+	return resp, nil
 }

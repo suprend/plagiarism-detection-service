@@ -17,7 +17,7 @@ func NewCheckHandler(uc usecase.CheckUseCase) *CheckHandler {
 
 func (h *CheckHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		h.writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "only POST is allowed")
+		respondMethodNotAllowed(w, "only POST is allowed")
 		return
 	}
 	h.handleStart(w, r)
@@ -30,41 +30,32 @@ func (h *CheckHandler) handleStart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		h.writeError(w, http.StatusBadRequest, "parse_error", "failed to parse request body")
+		respondValidationError(w, "failed to parse request body")
 		return
 	}
 
 	if request.SubmissionID == "" {
-		h.writeError(w, http.StatusBadRequest, "validation_error", "submission_id is required")
+		respondValidationError(w, "submission_id is required")
 		return
 	}
 
 	if request.WorkID == "" {
-		h.writeError(w, http.StatusBadRequest, "validation_error", "work_id is required")
+		respondValidationError(w, "work_id is required")
 		return
 	}
 
 	if h.useCase == nil {
-		h.writeError(w, http.StatusInternalServerError, "not_configured", "check use case is not configured")
+		respondError(w, usecase.ErrWorkerUnavailable)
 		return
 	}
 
 	resp, err := h.useCase.StartCheck(r.Context(), request.SubmissionID, request.WorkID)
 	if err != nil {
-		h.writeError(w, http.StatusInternalServerError, "start_check_failed", err.Error())
+		respondError(w, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(w).Encode(resp)
-}
-
-func (h *CheckHandler) writeError(w http.ResponseWriter, statusCode int, errorType, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(map[string]string{
-		"error":   errorType,
-		"message": message,
-	})
 }
