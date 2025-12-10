@@ -28,7 +28,14 @@ docker run --rm -p 8082:8082 \
   userapi
 ```
 
-Swagger UI доступен на `http://localhost:8082/swagger`, сама спецификация — `http://localhost:8082/openapi.yaml`.
+Swagger UI доступен на `http://localhost:8082/swagger`, сама спецификация — `http://localhost:8082/openapi.yaml`. HTML вшит в бинарь (go:embed), но CSS/JS/иконки грузятся с CDN.
+
+Swagger UI грузит CSS/JS/иконки с CDN (unpkg, версия 5.17.14) на этапе запроса в браузере, поэтому ассеты не хранятся в репозитории и не тянутся на сборке.
+
+### Makefile
+
+- `make build` — `go build ./cmd/server`
+- `make run` — build + старт сервера (`PORT=8082`, локальные URL по умолчанию)
 
 ### API
 

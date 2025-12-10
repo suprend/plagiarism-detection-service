@@ -1,13 +1,30 @@
 package router
 
 import (
+	"embed"
 	"encoding/json"
+	"io/fs"
 	"net/http"
 	"strings"
 
 	"userapi/internal/api/http/handler"
 	"userapi/internal/application/usecase"
 )
+
+var (
+	//go:embed swaggerui/*.html
+	swaggerUI embed.FS
+
+	swaggerHandler http.Handler
+)
+
+func init() {
+	root, err := fs.Sub(swaggerUI, "swaggerui")
+	if err != nil {
+		panic("failed to load embedded swagger UI: " + err.Error())
+	}
+	swaggerHandler = http.FileServer(http.FS(root))
+}
 
 type Router struct {
 	submitHandler    *handler.SubmitHandler
@@ -32,7 +49,8 @@ func (r *Router) SetupRoutes() http.Handler {
 		_, _ = w.Write([]byte("ok"))
 	})
 	mux.HandleFunc("/openapi.yaml", serveOpenAPI)
-	mux.HandleFunc("/swagger", serveSwaggerUI)
+	mux.HandleFunc("/swagger", redirectSwaggerRoot)
+	mux.Handle("/swagger/", http.StripPrefix("/swagger", swaggerHandler))
 	return mux
 }
 
@@ -62,32 +80,14 @@ func serveOpenAPI(w http.ResponseWriter, req *http.Request) {
 	http.ServeFile(w, req, "openapi.yaml")
 }
 
-const swaggerPage = `<!doctype html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>UserAPI Swagger</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
-  </head>
-  <body>
-    <div id="swagger"></div>
-    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
-    <script>
-      window.onload = () => {
-        SwaggerUIBundle({
-          url: '/openapi.yaml',
-          dom_id: '#swagger',
-        });
-      };
-    </script>
-  </body>
-</html>`
-
-func serveSwaggerUI(w http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet {
+func redirectSwaggerRoot(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet && req.Method != http.MethodHead {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(swaggerPage))
+	target := "/swagger/"
+	if req.URL.RawQuery != "" {
+		target += "?" + req.URL.RawQuery
+	}
+	http.Redirect(w, req, target, http.StatusMovedPermanently)
 }
