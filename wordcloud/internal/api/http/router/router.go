@@ -20,5 +20,20 @@ func NewRouter(wc *usecase.WordcloudService) *Router {
 func (r *Router) SetupRoutes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/wordcloud", r.wordcloudHandler.Handle)
-	return mux
+	return corsMiddleware(mux)
+}
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if req.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, req)
+	})
 }

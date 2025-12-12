@@ -1,30 +1,13 @@
 package router
 
 import (
-	"embed"
 	"encoding/json"
-	"io/fs"
 	"net/http"
 	"strings"
 
 	"userapi/internal/api/http/handler"
 	"userapi/internal/application/usecase"
 )
-
-var (
-	//go:embed swaggerui/*.html
-	swaggerUI embed.FS
-
-	swaggerHandler http.Handler
-)
-
-func init() {
-	root, err := fs.Sub(swaggerUI, "swaggerui")
-	if err != nil {
-		panic("failed to load embedded swagger UI: " + err.Error())
-	}
-	swaggerHandler = http.FileServer(http.FS(root))
-}
 
 type Router struct {
 	submitHandler    *handler.SubmitHandler
@@ -49,9 +32,22 @@ func (r *Router) SetupRoutes() http.Handler {
 		_, _ = w.Write([]byte("ok"))
 	})
 	mux.HandleFunc("/openapi.yaml", serveOpenAPI)
-	mux.HandleFunc("/swagger", redirectSwaggerRoot)
-	mux.Handle("/swagger/", http.StripPrefix("/swagger", swaggerHandler))
-	return mux
+	return corsMiddleware(mux)
+}
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if req.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, req)
+	})
 }
 
 func (r *Router) handleWorks(w http.ResponseWriter, req *http.Request) {
@@ -78,16 +74,4 @@ func serveOpenAPI(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	http.ServeFile(w, req, "openapi.yaml")
-}
-
-func redirectSwaggerRoot(w http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet && req.Method != http.MethodHead {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-	target := "/swagger/"
-	if req.URL.RawQuery != "" {
-		target += "?" + req.URL.RawQuery
-	}
-	http.Redirect(w, req, target, http.StatusMovedPermanently)
 }

@@ -116,6 +116,42 @@ services:
       wordcloud:
         condition: service_started
 
+  swagger-ui-userapi:
+    image: swaggerapi/swagger-ui:v5.17.14
+    ports:
+      - "8085:8080"
+    environment:
+      SWAGGER_JSON: /spec/openapi.yaml
+    volumes:
+      - ./userapi/openapi.yaml:/spec/openapi.yaml:ro
+
+  swagger-ui-filestorage:
+    image: swaggerapi/swagger-ui:v5.17.14
+    ports:
+      - "8086:8080"
+    environment:
+      SWAGGER_JSON: /spec/openapi.yaml
+    volumes:
+      - ./filestorage/openapi.yaml:/spec/openapi.yaml:ro
+
+  swagger-ui-plagiarism:
+    image: swaggerapi/swagger-ui:v5.17.14
+    ports:
+      - "8087:8080"
+    environment:
+      SWAGGER_JSON: /spec/openapi.yaml
+    volumes:
+      - ./plagiarism/openapi.yaml:/spec/openapi.yaml:ro
+
+  swagger-ui-wordcloud:
+    image: swaggerapi/swagger-ui:v5.17.14
+    ports:
+      - "8088:8080"
+    environment:
+      SWAGGER_JSON: /spec/openapi.yaml
+    volumes:
+      - ./wordcloud/openapi.yaml:/spec/openapi.yaml:ro
+
 volumes:
   postgres_data:
   minio_data:
